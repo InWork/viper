@@ -470,10 +470,10 @@ func TestFindsNestedKeys(t *testing.T) {
 				"nested": "value",
 			},
 		},
-		"super.deep": map[string]interface{}{
-			"nested": "value",
-		},
-		"super.deep.nested":  "value",
+		// "super.deep": map[string]interface{}{
+		// 	"nested": "value",
+		// },
+		// "super.deep.nested":  "value",
 		"owner.organization": "MongoDB",
 		"batters.batter": []interface{}{
 			map[string]interface{}{

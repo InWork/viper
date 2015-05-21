@@ -341,19 +341,12 @@ func (v *Viper) searchMap(source map[string]interface{}, path []string) interfac
 // Get returns an interface. For a specific value use one of the Get____ methods.
 func Get(key string) interface{} { return v.Get(key) }
 func (v *Viper) Get(key string) interface{} {
-	path := strings.Split(key, v.keyDelim)
 
-	val := v.find(strings.ToLower(key))
+	var val interface{}
+	val = v.find(key)
 
 	if val == nil {
-		source := v.find(path[0])
-		if source == nil {
-			return nil
-		}
-
-		if reflect.TypeOf(source).Kind() == reflect.Map {
-			val = v.searchMap(cast.ToStringMap(source), path[1:])
-		}
+		val = v.find(strings.ToLower(key))
 	}
 
 	switch val.(type) {
@@ -581,6 +574,13 @@ func (v *Viper) find(key string) interface{} {
 		return val
 	}
 
+	// find nested value in v.config
+	val = v.findNestedValue(key, "config")
+	if val != nil {
+		jww.TRACE.Println(key, "found nested value in config:", val)
+		return val
+	}
+
 	val, exists = v.kvstore[key]
 	if exists {
 		jww.TRACE.Println(key, "found in key/value store:", val)
@@ -591,6 +591,32 @@ func (v *Viper) find(key string) interface{} {
 	if exists {
 		jww.TRACE.Println(key, "found in defaults:", val)
 		return val
+	}
+
+	return nil
+}
+
+// Given a nested key, find the value
+func (v *Viper) findNestedValue(key string, source string) interface{} {
+	var source_val interface{}
+	var val interface{}
+	var exists bool
+
+	path := strings.Split(key, v.keyDelim)
+
+	switch source {
+	case "override":
+		source_val, exists = v.override[path[0]]
+	case "config":
+		source_val, exists = v.config[path[0]]
+	}
+
+	source_val, exists = v.config[path[0]]
+	if exists {
+		if reflect.TypeOf(source_val).Kind() == reflect.Map {
+			val = v.searchMap(cast.ToStringMap(source_val), path[1:])
+			return val
+		}
 	}
 
 	return nil
