@@ -123,6 +123,9 @@ type Viper struct {
 	configType string
 	envPrefix  string
 
+	// App file path
+	appEnv string
+
 	automaticEnvApplied bool
 	envKeyReplacer      *strings.Replacer
 
@@ -191,6 +194,23 @@ func (v *Viper) SetConfigFile(in string) {
 	if in != "" {
 		v.configFile = in
 	}
+}
+
+// Define a prefix that Application enviroment variables will use.
+func SetAppEnv(in string) { v.SetEnvPrefix(in) }
+func (v *Viper) SetAppEnv(in string) {
+	if in != "" {
+		v.appEnv = strings.ToLower(in)
+	}
+}
+
+// Check to see if the key has been set in any of the data locations
+func AppEnvIsSet() bool { return v.AppEnvIsSet() }
+func (v *Viper) AppEnvIsSet() bool {
+	if v.appEnv != "" {
+		return true
+	}
+	return false
 }
 
 // Define a prefix that ENVIRONMENT variables will use.
@@ -579,6 +599,15 @@ func (v *Viper) find(key string) interface{} {
 	if val != nil {
 		jww.TRACE.Println(key, "found nested value in config:", val)
 		return val
+	}
+
+	/// find nested value in v.config
+	if v.AppEnvIsSet() {
+		val = v.findNestedValue(v.appEnv+"."+key, "config")
+		if val != nil {
+			jww.TRACE.Println(key, "found nested value of app enviroment in config:", val)
+			return val
+		}
 	}
 
 	val, exists = v.kvstore[key]
